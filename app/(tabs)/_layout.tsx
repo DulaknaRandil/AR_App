@@ -35,6 +35,7 @@ export default function TabLayout() {
         name="index"
         options={{
           title: 'Home',
+          headerShown: false,
           headerRight: () => isAdmin ? (
             <IconButton
               icon="shield-crown"

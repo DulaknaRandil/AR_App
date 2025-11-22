@@ -110,7 +110,7 @@ export default function ProductDetailScreen() {
           )}
         </View>
 
-        <Text variant="headlineSmall" style={styles.price}>${product.price}</Text>
+        <Text variant="headlineSmall" style={styles.price}>LKR {product.price}</Text>
         
         <Card style={styles.card}>
           <Card.Content>

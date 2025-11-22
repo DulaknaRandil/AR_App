@@ -158,7 +158,7 @@ export default function CartScreen() {
         />
         <View style={styles.itemDetails}>
           <Text variant="titleMedium">{item.product.name}</Text>
-          <Text variant="bodyLarge" style={styles.price}>${item.product.price}</Text>
+          <Text variant="bodyLarge" style={styles.price}>LKR {item.product.price}</Text>
           <View style={styles.quantityControls}>
             <IconButton
               icon="minus"
@@ -176,7 +176,7 @@ export default function CartScreen() {
         </View>
         <View style={styles.itemActions}>
           <Text variant="titleMedium" style={styles.subtotal}>
-            ${(item.product.price * item.quantity).toFixed(2)}
+          LKR {(item.product.price * item.quantity).toFixed(2)}
           </Text>
           <IconButton
             icon="delete"
@@ -220,7 +220,7 @@ export default function CartScreen() {
                 <View style={styles.summaryRow}>
                   <Text variant="titleLarge">Total:</Text>
                   <Text variant="titleLarge" style={styles.totalPrice}>
-                    ${calculateTotal().toFixed(2)}
+                    LKR {calculateTotal().toFixed(2)}
                   </Text>
                 </View>
                 <Button 

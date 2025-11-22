@@ -5,13 +5,13 @@
     "scheme": "arapp",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/image.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#000"
     },
     "ios": {
       "supportsTablet": true,
@@ -25,16 +25,17 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/image.png",
         "backgroundColor": "#ffffff"
       },
       "package": "com.anonymous.arapp",
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "permissions": [
-        "android.permission.CAMERA"
-      ],
-      "ndkVersion": "27.0.12077973"
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -43,13 +44,15 @@
       "@reactvision/react-viro",
       "react-native-vision-camera",
       "expo-router",
-      "expo-dev-client"
+      "expo-dev-client",
+      "expo-system-ui"
     ],
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "bea6b84b-82ae-4d49-a9b7-1923a8a29f98"
+        "projectId": "1ee034bf-12e1-4ab4-bb96-2f50269da21f"
       }
-    }
+    },
+    "owner": "desh1100"
   }
 }

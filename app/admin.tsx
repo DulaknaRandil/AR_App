@@ -188,7 +188,7 @@ export default function AdminDashboard() {
 
   const renderProduct = ({ item }: { item: Product }) => (
     <Card style={styles.productCard}>
-      <Card.Title title={item.name} subtitle={`$${item.price} | Stock: ${item.stock}`} />
+      <Card.Title title={item.name} subtitle={`LKR ${item.price} | Stock: ${item.stock}`} />
       <Card.Content>
         <Text variant="bodyMedium">{item.category}</Text>
       </Card.Content>

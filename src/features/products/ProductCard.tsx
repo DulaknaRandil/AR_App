@@ -58,7 +58,7 @@ export default function ProductCard({ product }: ProductCardProps) {
         </Text>
         
         <Text variant="titleMedium" style={styles.price}>
-          ${product.price}
+          LKR {product.price}
         </Text>
         
         <View style={styles.actions}>
