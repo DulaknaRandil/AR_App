@@ -176,7 +176,7 @@ export default function ProductDetailScreen() {
               onPress={handleViewInAR}
               style={styles.button}
             >
-              View in ARR
+              View in AR
             </Button>
           )}
         </View>

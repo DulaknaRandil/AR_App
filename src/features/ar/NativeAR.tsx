@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { View, StyleSheet, Platform, Text, ActivityIndicator, NativeModules, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, Platform, Text, ActivityIndicator, NativeModules, TouchableOpacity, Alert } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 
 type ViroModuleType = typeof import('@reactvision/react-viro');
@@ -27,7 +27,13 @@ const LoadingNativeAR = () => (
   </View>
 );
 
-const createARScene = (ViroModule: ViroModuleType) => {
+const createARScene = (
+  ViroModule: ViroModuleType, 
+  onModelLoadStart: () => void, 
+  onModelLoadEnd: () => void, 
+  onModelLoadError: () => void,
+  scaleRef: React.MutableRefObject<[number, number, number]>
+) => {
   const {
     ViroARScene,
     Viro3DObject,
@@ -35,13 +41,25 @@ const createARScene = (ViroModule: ViroModuleType) => {
     ViroARPlaneSelector,
     ViroNode,
     ViroSpotLight,
+    ViroText,
   } = ViroModule;
 
   const ARScene = () => {
   const [isModelPlaced, setIsModelPlaced] = useState(false);
   const [placedPosition, setPlacedPosition] = useState<[number, number, number] | null>(null);
   const [modelRotation, setModelRotation] = useState<[number, number, number]>([0, 0, 0]);
-  const [modelScale, setModelScale] = useState<[number, number, number]>([0.3, 0.3, 0.3]);
+  const [modelScale, setModelScale] = useState<[number, number, number]>(scaleRef.current);
+  const [modelError, setModelError] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [modelLoaded, setModelLoaded] = useState(false);
+  const [hasShownAlert, setHasShownAlert] = useState(false);
+
+    console.log('AR: Using local bundled model from assets/');
+    
+    // Update scale when external ref changes
+    useEffect(() => {
+      setModelScale(scaleRef.current);
+    }, [scaleRef.current[0]]);
 
     const onRotate = (rotateState: number, rotationFactor: number) => {
       if (rotateState === 2) { // Continuous rotation
@@ -50,14 +68,6 @@ const createARScene = (ViroModule: ViroModuleType) => {
           currentRotation[1] + rotationFactor,
           currentRotation[2],
         ]);
-      }
-    };
-
-    const onPinch = (pinchState: number, scaleFactor: number) => {
-      if (pinchState === 2) { // Continuous pinch
-        const newScale = modelScale[0] * scaleFactor;
-        const clampedScale = Math.max(0.05, Math.min(3.0, newScale));
-        setModelScale([clampedScale, clampedScale, clampedScale]);
       }
     };
 
@@ -73,32 +83,136 @@ const createARScene = (ViroModule: ViroModuleType) => {
       }}>
         <ViroAmbientLight color="#ffffff" intensity={1000} />
         
-        <ViroARPlaneSelector onPlaneSelected={(position?: any, planeAnchor?: any) => {
-          console.log('onPlaneSelected:', { position, planeAnchor });
-          // position is [x,y,z] in world coordinates where the user tapped the plane
-          if (position && Array.isArray(position)) {
-            setPlacedPosition([position[0], position[1], position[2]]);
+        <ViroARPlaneSelector onPlaneSelected={(anchorPosition?: any) => {
+          console.log('🎯 onPlaneSelected:', anchorPosition);
+          // Extract the actual position array from the anchor object
+          let actualPosition: [number, number, number];
+          
+          if (anchorPosition && anchorPosition.position && Array.isArray(anchorPosition.position)) {
+            // Position is in anchorPosition.position array
+            actualPosition = [anchorPosition.position[0], anchorPosition.position[1], anchorPosition.position[2]];
+            console.log('📍 Placing model at plane position:', actualPosition);
+          } else if (anchorPosition && Array.isArray(anchorPosition)) {
+            // Position is directly the array
+            actualPosition = [anchorPosition[0], anchorPosition[1], anchorPosition[2]];
+            console.log('📍 Placing model at position:', actualPosition);
+          } else {
+            // Default position 1 meter in front
+            actualPosition = [0, -0.5, -1];
+            console.log('📍 Using default position:', actualPosition);
           }
+          
+          setPlacedPosition(actualPosition);
           setIsModelPlaced(true);
         }}>
           {isModelPlaced && (
             <ViroNode
-              position={placedPosition ?? [0, 0, 0]} // Use the actual plane-selected position
+              position={placedPosition ?? [0, 0, -1]} // Use the actual plane-selected position
               dragType="FixedToWorld"
-              onDrag={() => {}}
+              onDrag={() => {
+                console.log('📦 Model is being dragged');
+              }}
             >
-              <Viro3DObject
-                source={require('../../../assets/Ir6mG6RXsTF6I_B2ZPQcW.glb')}
-                position={[0, 0, 0]}
-                rotation={modelRotation}
-                scale={modelScale}
-                type="GLB"
-                onRotate={onRotate}
-                onPinch={onPinch}
-                onLoadStart={() => console.log('Model loading...')}
-                onLoadEnd={() => console.log('Model loaded!')}
-                onError={(error) => console.error('Model error:', error)}
+              {/* Debug markers */}
+              <ViroText
+                text="⬆️ UP"
+                scale={[0.2, 0.2, 0.2]}
+                position={[0, 0.5, 0]}
+                style={{ color: '#00ff00', fontSize: 30, fontWeight: 'bold' }}
               />
+              <ViroText
+                text="⬇️ DOWN"
+                scale={[0.2, 0.2, 0.2]}
+                position={[0, -0.5, 0]}
+                style={{ color: '#ff0000', fontSize: 30, fontWeight: 'bold' }}
+              />
+              <ViroText
+                text={`Scale: ${modelScale[0].toFixed(2)}`}
+                scale={[0.15, 0.15, 0.15]}
+                position={[0, 0.7, 0]}
+                style={{ color: '#ffffff', fontSize: 20 }}
+              />
+              {!modelError && (
+                <Viro3DObject
+                  source={require('../../../assets/chair.glb')}
+                  position={[0, 0, 0]}
+                  rotation={modelRotation}
+                  scale={modelScale}
+                  type="GLB"
+                  onRotate={onRotate}
+                  onLoadStart={() => {
+                    if (!isLoading && !modelLoaded) {
+                      console.log('🔄 Loading model from assets/chair.glb');
+                      setIsLoading(true);
+                      setModelError(false);
+                      setModelLoaded(false);
+                      onModelLoadStart();
+                    }
+                  }}
+                  onLoadEnd={() => {
+                    if (!modelLoaded) {
+                      console.log('✅ Model loaded successfully from assets/chair.glb');
+                      console.log('📏 Current scale:', modelScale);
+                      console.log('📍 Current position:', placedPosition);
+                      console.log('🔄 Current rotation:', modelRotation);
+                      console.log('💡 TIP: If you see the green UP and red DOWN markers but no model:');
+                      console.log('   - Try pinching OUT with 2 fingers to make it bigger');
+                      console.log('   - The model might be very small or very large');
+                      console.log('   - Look around the markers - model might be offset');
+                      setIsLoading(false);
+                      setModelLoaded(true);
+                      onModelLoadEnd();
+                      // Show success alert only once
+                      if (!hasShownAlert) {
+                        setHasShownAlert(true);
+                        setTimeout(() => {
+                          Alert.alert(
+                            '✅ Model Loaded',
+                            'Look for GREEN (UP) and RED (DOWN) markers.\n\nUse + and - buttons to resize\nCurrent scale: ' + modelScale[0].toFixed(2),
+                            [{ text: 'Got it!' }]
+                          );
+                        }, 100);
+                      }
+                    }
+                  }}
+                  onError={(event) => {
+                    // Sometimes onError fires even after successful load - ignore if already loaded
+                    if (modelLoaded) {
+                      console.log('⚠️ Ignoring error event - model already loaded successfully');
+                      return;
+                    }
+                    console.error('❌ Model loading failed');
+                    console.error('Error details:', JSON.stringify(event, null, 2));
+                    console.error('Check if chair.glb is a valid GLB/GLTF 2.0 file');
+                    console.error('Try validating at: https://gltf-viewer.donmccurdy.com/');
+                    setModelError(true);
+                    setIsLoading(false);
+                    onModelLoadError();
+                    // Show error alert
+                    Alert.alert(
+                      '❌ Model Error',
+                      'Failed to load 3D model. Please check if the file is valid.',
+                      [{ text: 'OK' }]
+                    );
+                  }}
+                />
+              )}
+              {modelError && (
+                <ViroText
+                  text="⚠️ Model Error\nCheck if chair.glb is valid\nTry a different GLB file"
+                  scale={[0.5, 0.5, 0.5]}
+                  position={[0, 0.5, 0]}
+                  style={{ color: '#ff0000', fontSize: 30, fontWeight: 'bold' }}
+                />
+              )}
+              {isLoading && !modelError && (
+                <ViroText
+                  text="Loading 3D Model..."
+                  scale={[0.4, 0.4, 0.4]}
+                  position={[0, 0.5, 0]}
+                  style={{ color: '#4285f4', fontSize: 30, fontWeight: 'bold' }}
+                />
+              )}
             </ViroNode>
           )}
         </ViroARPlaneSelector>
@@ -114,9 +228,12 @@ export default function NativeAR() {
     return null;
   }
 
+  const params = useLocalSearchParams<{ productId?: string; productName?: string }>();
   const [viroModule, setViroModule] = useState<ViroModuleType | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [showInstructions, setShowInstructions] = useState(true);
+
+  console.log('NativeAR launched for product:', params.productName || 'Unknown');
 
   useEffect(() => {
     let isMounted = true;
@@ -171,7 +288,41 @@ export default function NativeAR() {
   }, []);
 
   const ViroARSceneNavigator = useMemo(() => viroModule?.ViroARSceneNavigator, [viroModule]);
-  const ARScene = useMemo(() => (viroModule ? createARScene(viroModule) : null), [viroModule]);
+  const [isModelLoading, setIsModelLoading] = useState(false);
+  const [modelLoadSuccess, setModelLoadSuccess] = useState(false);
+  const [currentScale, setCurrentScale] = useState(0.2);
+  const scaleRef = React.useRef<[number, number, number]>([0.2, 0.2, 0.2]);
+  
+  const handleScaleIncrease = () => {
+    const newScale = Math.min(currentScale + 0.1, 10.0);
+    setCurrentScale(newScale);
+    scaleRef.current = [newScale, newScale, newScale];
+    console.log('➕ Scale increased to:', newScale.toFixed(2));
+  };
+  
+  const handleScaleDecrease = () => {
+    const newScale = Math.max(currentScale - 0.1, 0.01);
+    setCurrentScale(newScale);
+    scaleRef.current = [newScale, newScale, newScale];
+    console.log('➖ Scale decreased to:', newScale.toFixed(2));
+  };
+  
+  const ARScene = useMemo(() => {
+    if (!viroModule) return null;
+    return createARScene(
+      viroModule,
+      () => setIsModelLoading(true),
+      () => {
+        setIsModelLoading(false);
+        setModelLoadSuccess(true);
+      },
+      () => {
+        setIsModelLoading(false);
+        setModelLoadSuccess(false);
+      },
+      scaleRef
+    );
+  }, [viroModule]);
 
   if (loadError === 'missing-native') {
     return <MissingNativeModuleMessage />;
@@ -203,15 +354,26 @@ export default function NativeAR() {
         style={styles.f1}
       />
       
+      {/* Loading Overlay */}
+      {isModelLoading && (
+        <View style={styles.loadingOverlay}>
+          <View style={styles.loaderCard}>
+            <ActivityIndicator size="large" color="#4285f4" />
+            <Text style={styles.loaderText}>Loading 3D Model...</Text>
+            <Text style={styles.loaderSubtext}>Please wait</Text>
+          </View>
+        </View>
+      )}
+      
       {/* Instructions Overlay */}
-      {showInstructions && (
+      {showInstructions && !isModelLoading && (
         <View style={styles.instructionsOverlay}>
           <View style={styles.instructionsCard}>
             <Text style={styles.instructionsTitle}>🪑 AR Furniture Controls</Text>
-            <Text style={styles.instructionText}>✌️ Use 2 fingers to PINCH - resize model</Text>
-            <Text style={styles.instructionText}>� Use 2 fingers to ROTATE - spin model</Text>
+            <Text style={styles.instructionText}>➕➖ Use + and - buttons to resize</Text>
+            <Text style={styles.instructionText}>🔄 Use 2 fingers to ROTATE - spin model</Text>
             <Text style={styles.instructionText}>👆 Use 1 finger to DRAG - move around</Text>
-            <Text style={styles.instructionText}>� The model appears in front of you</Text>
+            <Text style={styles.instructionText}>📍 Tap a surface to place model</Text>
             
             <TouchableOpacity 
               style={styles.gotItButton}
@@ -220,6 +382,27 @@ export default function NativeAR() {
               <Text style={styles.gotItText}>Start AR Experience</Text>
             </TouchableOpacity>
           </View>
+        </View>
+      )}
+      
+      {/* Scale Control Buttons */}
+      {!isModelLoading && (
+        <View style={styles.scaleControls}>
+          <TouchableOpacity 
+            style={styles.scaleButton}
+            onPress={handleScaleDecrease}
+          >
+            <Text style={styles.scaleButtonText}>-</Text>
+          </TouchableOpacity>
+          <View style={styles.scaleDisplay}>
+            <Text style={styles.scaleDisplayText}>{currentScale.toFixed(1)}x</Text>
+          </View>
+          <TouchableOpacity 
+            style={styles.scaleButton}
+            onPress={handleScaleIncrease}
+          >
+            <Text style={styles.scaleButtonText}>+</Text>
+          </TouchableOpacity>
         </View>
       )}
     </View>
@@ -335,5 +518,77 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 14,
     textAlign: 'center',
+  },
+  loadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.85)',
+    zIndex: 1000,
+  },
+  loaderCard: {
+    backgroundColor: '#1a1a1a',
+    borderRadius: 16,
+    padding: 32,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#333',
+    minWidth: 200,
+  },
+  loaderText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginTop: 16,
+  },
+  loaderSubtext: {
+    color: '#999',
+    fontSize: 14,
+    marginTop: 8,
+  },
+  scaleControls: {
+    position: 'absolute',
+    bottom: 40,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 16,
+  },
+  scaleButton: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#4285f4',
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
+  scaleButtonText: {
+    color: '#fff',
+    fontSize: 32,
+    fontWeight: 'bold',
+  },
+  scaleDisplay: {
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 20,
+    minWidth: 80,
+    alignItems: 'center',
+  },
+  scaleDisplayText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
   },
 });
