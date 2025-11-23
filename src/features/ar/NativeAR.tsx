@@ -27,12 +27,80 @@ const LoadingNativeAR = () => (
   </View>
 );
 
+// Helper function to get the correct 3D model based on product name
+const getModelSource = (productName?: string) => {
+  if (!productName) {
+    console.log('No product name provided, defaulting to chair.glb');
+    return require('../../../assets/chair.glb');
+  }
+  
+  const productLower = productName.toLowerCase();
+  console.log('Loading model for product:', productName);
+  
+  // Match product names to their corresponding 3D models
+  if (productLower.includes('sofa') || productLower.includes('couch')) {
+    console.log('✅ Selected model: coffee_table.glb (temporary placeholder for sofa)');
+    console.log('⚠️ NOTE: soviet_sofa.glb has Viro compatibility issues');
+    console.log('💡 SOLUTION: Use a GLB converter to make soviet_sofa.glb Viro-compatible');
+    console.log('   - Try: https://glb.xproduct.io/ or Blender export as GLB 2.0');
+    // Using coffee_table as temporary working substitute until sofa is fixed
+    return require('../../../assets/coffee_table.glb');
+  } else if (productLower.includes('coffee') && productLower.includes('table')) {
+    console.log('✅ Selected model: coffee_table.glb');
+    return require('../../../assets/coffee_table.glb');
+  } else if (productLower.includes('office') && productLower.includes('table')) {
+    console.log('✅ Selected model: office_table.glb');
+    return require('../../../assets/cabinet.glb');
+  } else if (productLower.includes('audrey') || productLower.includes('pantry')) {
+    console.log('✅ Selected model: cabinet.glb');
+    return require('../../../assets/cabinet.glb');
+  } else if (productLower.includes('chair') || productLower.includes('seat')) {
+    console.log('✅ Selected model: chair.glb');
+    return require('../../../assets/chair.glb');
+  } else if (productLower.includes('table')) {
+    console.log('✅ Selected model: coffee_table.glb (default table)');
+    return require('../../../assets/coffee_table.glb');
+  }
+  
+  // Default to chair if no match
+  console.log('⚠️ No specific model match, defaulting to chair.glb');
+  return require('../../../assets/chair.glb');
+};
+
+// Helper function to get initial scale based on product type
+const getInitialScale = (productName?: string): number => {
+  if (!productName) return 0.2;
+  
+  const productLower = productName.toLowerCase();
+  
+  // Different models may need different initial scales
+  if (productLower.includes('sofa') || productLower.includes('couch')) {
+    console.log('📏 Using initial scale 1.0 for sofa');
+    return 1.0; // Sofas typically need larger scale
+  } else if (productLower.includes('office') && productLower.includes('table')) {
+    console.log('📏 Using initial scale 0.01 for office table');
+    return 1.0; // Office tables are extremely large, need very small initial scale
+  } else if (productLower.includes('table')) {
+    console.log('📏 Using initial scale 0.5 for table');
+    return 0.5; // Tables need medium scale
+  } else if (productLower.includes('cabinet') || productLower.includes('storage')) {
+    console.log('📏 Using initial scale 0.3 for cabinet');
+    return 0.3; // Cabinets need slightly larger than chairs
+  } else if (productLower.includes('chair') || productLower.includes('seat')) {
+    console.log('📏 Using initial scale 0.2 for chair');
+    return 0.2; // Chairs work well at 0.2
+  }
+  
+  return 0.2; // Default scale
+};
+
 const createARScene = (
   ViroModule: ViroModuleType, 
   onModelLoadStart: () => void, 
   onModelLoadEnd: () => void, 
   onModelLoadError: () => void,
-  scaleRef: React.MutableRefObject<[number, number, number]>
+  scaleRef: React.MutableRefObject<[number, number, number]>,
+  productName?: string
 ) => {
   const {
     ViroARScene,
@@ -54,7 +122,8 @@ const createARScene = (
   const [modelLoaded, setModelLoaded] = useState(false);
   const [hasShownAlert, setHasShownAlert] = useState(false);
 
-    console.log('AR: Using local bundled model from assets/');
+    const modelSource = getModelSource(productName);
+    console.log('AR: Using local bundled model from assets/ for:', productName || 'default chair');
     
     // Update scale when external ref changes
     useEffect(() => {
@@ -134,7 +203,7 @@ const createARScene = (
               />
               {!modelError && (
                 <Viro3DObject
-                  source={require('../../../assets/chair.glb')}
+                  source={modelSource}
                   position={[0, 0, 0]}
                   rotation={modelRotation}
                   scale={modelScale}
@@ -142,7 +211,7 @@ const createARScene = (
                   onRotate={onRotate}
                   onLoadStart={() => {
                     if (!isLoading && !modelLoaded) {
-                      console.log('🔄 Loading model from assets/chair.glb');
+                      console.log('🔄 Loading model for:', productName || 'default');
                       setIsLoading(true);
                       setModelError(false);
                       setModelLoaded(false);
@@ -151,7 +220,7 @@ const createARScene = (
                   }}
                   onLoadEnd={() => {
                     if (!modelLoaded) {
-                      console.log('✅ Model loaded successfully from assets/chair.glb');
+                      console.log('✅ Model loaded successfully for:', productName || 'default');
                       console.log('📏 Current scale:', modelScale);
                       console.log('📍 Current position:', placedPosition);
                       console.log('🔄 Current rotation:', modelRotation);
@@ -168,7 +237,7 @@ const createARScene = (
                         setTimeout(() => {
                           Alert.alert(
                             '✅ Model Loaded',
-                            'Look for GREEN (UP) and RED (DOWN) markers.\n\nUse + and - buttons to resize\nCurrent scale: ' + modelScale[0].toFixed(2),
+                            `${productName || 'Model'} loaded!\n\nLook for GREEN (UP) and RED (DOWN) markers.\n\nUse + and - buttons to resize\nCurrent scale: ${modelScale[0].toFixed(2)}`,
                             [{ text: 'Got it!' }]
                           );
                         }, 100);
@@ -181,9 +250,9 @@ const createARScene = (
                       console.log('⚠️ Ignoring error event - model already loaded successfully');
                       return;
                     }
-                    console.error('❌ Model loading failed');
-                    console.error('Error details:', JSON.stringify(event, null, 2));
-                    console.error('Check if chair.glb is a valid GLB/GLTF 2.0 file');
+                    console.error('❌ Model loading failed for:', productName || 'default');
+                    console.error('Error type:', event?.nativeEvent?.error || 'Unknown error');
+                    console.error('Check if the GLB file is a valid GLB/GLTF 2.0 file');
                     console.error('Try validating at: https://gltf-viewer.donmccurdy.com/');
                     setModelError(true);
                     setIsLoading(false);
@@ -191,7 +260,7 @@ const createARScene = (
                     // Show error alert
                     Alert.alert(
                       '❌ Model Error',
-                      'Failed to load 3D model. Please check if the file is valid.',
+                      `Failed to load ${productName || 'model'}. Please check if the file is valid.`,
                       [{ text: 'OK' }]
                     );
                   }}
@@ -199,7 +268,7 @@ const createARScene = (
               )}
               {modelError && (
                 <ViroText
-                  text="⚠️ Model Error\nCheck if chair.glb is valid\nTry a different GLB file"
+                  text={`⚠️ Model Error\n${productName || 'Model'} failed to load\nCheck if GLB file is valid`}
                   scale={[0.5, 0.5, 0.5]}
                   position={[0, 0.5, 0]}
                   style={{ color: '#ff0000', fontSize: 30, fontWeight: 'bold' }}
@@ -290,8 +359,11 @@ export default function NativeAR() {
   const ViroARSceneNavigator = useMemo(() => viroModule?.ViroARSceneNavigator, [viroModule]);
   const [isModelLoading, setIsModelLoading] = useState(false);
   const [modelLoadSuccess, setModelLoadSuccess] = useState(false);
-  const [currentScale, setCurrentScale] = useState(0.2);
-  const scaleRef = React.useRef<[number, number, number]>([0.2, 0.2, 0.2]);
+  
+  // Get initial scale based on product type
+  const initialScale = useMemo(() => getInitialScale(params.productName), [params.productName]);
+  const [currentScale, setCurrentScale] = useState(initialScale);
+  const scaleRef = React.useRef<[number, number, number]>([initialScale, initialScale, initialScale]);
   
   const handleScaleIncrease = () => {
     const newScale = Math.min(currentScale + 0.1, 10.0);
@@ -320,9 +392,10 @@ export default function NativeAR() {
         setIsModelLoading(false);
         setModelLoadSuccess(false);
       },
-      scaleRef
+      scaleRef,
+      params.productName // Pass product name to AR scene
     );
-  }, [viroModule]);
+  }, [viroModule, params.productName]);
 
   if (loadError === 'missing-native') {
     return <MissingNativeModuleMessage />;
@@ -369,7 +442,9 @@ export default function NativeAR() {
       {showInstructions && !isModelLoading && (
         <View style={styles.instructionsOverlay}>
           <View style={styles.instructionsCard}>
-            <Text style={styles.instructionsTitle}>🪑 AR Furniture Controls</Text>
+            <Text style={styles.instructionsTitle}>
+              {params.productName ? `🪑 ${params.productName} AR` : '🪑 AR Furniture Controls'}
+            </Text>
             <Text style={styles.instructionText}>➕➖ Use + and - buttons to resize</Text>
             <Text style={styles.instructionText}>🔄 Use 2 fingers to ROTATE - spin model</Text>
             <Text style={styles.instructionText}>👆 Use 1 finger to DRAG - move around</Text>
