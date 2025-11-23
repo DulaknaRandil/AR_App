@@ -162,13 +162,21 @@ export default function ProductDetailScreen() {
             Add to Cart
           </Button>
           
+          <Button 
+            mode="contained-tonal" 
+            onPress={() => {/* TODO: Implement AI Space Analyzer */}}
+            style={styles.button}
+          >
+            AI Space Analyzer
+          </Button>
+          
           {product.model_url && (
             <Button 
               mode="outlined" 
               onPress={handleViewInAR}
               style={styles.button}
             >
-              View in AR
+              View in ARR
             </Button>
           )}
         </View>
