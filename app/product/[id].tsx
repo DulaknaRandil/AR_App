@@ -164,8 +164,12 @@ export default function ProductDetailScreen() {
           
           <Button 
             mode="contained-tonal" 
-            onPress={() => {/* TODO: Implement AI Space Analyzer */}}
+            onPress={() => router.push({
+              pathname: '/space-analyzer',
+              params: { productId: product.id }
+            })}
             style={styles.button}
+            icon="star-outline"
           >
             AI Space Analyzer
           </Button>

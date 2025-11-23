@@ -34,4 +34,28 @@ export interface Category {
     created_at?: string;
     updated_at?: string;
   }
+
+  export interface SpaceAnalysisResult {
+    suitable: boolean;
+    suitabilityScore: number;
+    colorMatch: string;
+    styleMatch: string;
+    recommendations: string[];
+    alternativeColors: string[];
+    reasoning: string;
+  }
+  
+  export interface ProductDetails {
+    name: string;
+    description: string;
+    category: string;
+    color?: string;
+    material?: string;
+    dimensions?: {
+      width: number;
+      height: number;
+      depth: number;
+    };
+    price: number;
+  }
   

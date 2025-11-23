@@ -47,7 +47,19 @@
       "react-native-vision-camera",
       "expo-router",
       "expo-dev-client",
-      "expo-system-ui"
+      "expo-system-ui",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera for space analysis"
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow $(PRODUCT_NAME) to access your photos for space analysis"
+        }
+      ]
     ],
     "extra": {
       "router": {},
