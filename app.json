@@ -36,7 +36,8 @@
         "android.permission.INTERNET",
         "android.permission.ACCESS_NETWORK_STATE",
         "android.permission.READ_EXTERNAL_STORAGE",
-        "android.permission.WRITE_EXTERNAL_STORAGE"
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.RECORD_AUDIO"
       ]
     },
     "web": {
@@ -64,9 +65,8 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "1ee034bf-12e1-4ab4-bb96-2f50269da21f"
+        "projectId": "e1f6914c-b64d-4925-bcb6-dd5a10b1dfc9"
       }
-    },
-    "owner": "desh1100"
+    }
   }
 }

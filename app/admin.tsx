@@ -161,7 +161,7 @@ export default function AdminDashboard() {
   const handleDeleteProduct = async (id: string) => {
     Alert.alert(
       'Confirm Delete',
-      'Are you sure you want to delete this product?',
+      'Are you sure you want to delete this product? This will also remove it from all order histories.',
       [
         { text: 'Cancel' },
         {
@@ -169,16 +169,19 @@ export default function AdminDashboard() {
           style: 'destructive',
           onPress: async () => {
             try {
+              // Database CASCADE will automatically delete related order_items and cart_items
               const { error } = await supabase
                 .from('products')
                 .delete()
                 .eq('id', id);
 
               if (error) throw error;
+              
               Alert.alert('Success', 'Product deleted successfully');
               fetchProducts();
             } catch (error: any) {
-              Alert.alert('Error', error.message);
+              console.error('Delete error:', error);
+              Alert.alert('Error', error.message || 'Failed to delete product');
             }
           }
         }

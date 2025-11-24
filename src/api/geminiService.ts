@@ -2,7 +2,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import * as FileSystem from 'expo-file-system/legacy';
 
 // Initialize Gemini AI with API key
-const API_KEY = 'AIzaSyDz5RdkmJvojYq5280-wSJOjljR9Dn-ifM';
+const API_KEY = _____API_KEY__; // Replace with your actual API key
 const genAI = new GoogleGenerativeAI(API_KEY);
 
 export interface SpaceAnalysisResult {
