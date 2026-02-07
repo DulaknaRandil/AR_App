@@ -103,50 +103,7 @@ export default function CartScreen() {
       return;
     }
 
-    try {
-      const total = calculateTotal();
-      
-      // Create order
-      const { data: order, error: orderError } = await supabase
-        .from('orders')
-        .insert({
-          user_id: session?.user.id,
-          total_amount: total,
-          status: 'pending'
-        })
-        .select()
-        .single();
-
-      if (orderError) throw orderError;
-
-      // Create order items
-      const orderItems = cartProducts.map(item => ({
-        order_id: order.id,
-        product_id: item.product_id,
-        quantity: item.quantity,
-        price: item.product.price
-      }));
-
-      const { error: itemsError } = await supabase
-        .from('order_items')
-        .insert(orderItems);
-
-      if (itemsError) throw itemsError;
-
-      // Clear cart
-      await supabase
-        .from('cart_items')
-        .delete()
-        .eq('user_id', session?.user.id);
-
-      clearCart();
-      
-      Alert.alert('Success', 'Order placed successfully!', [
-        { text: 'OK', onPress: () => router.push('/(tabs)') }
-      ]);
-    } catch (error: any) {
-      Alert.alert('Error', error.message);
-    }
+    router.push('/checkout');
   };
 
   const renderCartItem = ({ item }: { item: CartProduct }) => (

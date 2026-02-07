@@ -10,6 +10,7 @@ export default function ProfileScreen() {
   const setSession = useAuthStore((state) => state.setSession);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   
   const [profile, setProfile] = useState({
     full_name: '',
@@ -48,6 +49,7 @@ export default function ProfileScreen() {
           country: data.country || '',
           postal_code: data.postal_code || ''
         });
+        setIsAdmin(data.is_admin || false);
       }
     } catch (error: any) {
       Alert.alert('Error', error.message);
@@ -103,6 +105,40 @@ export default function ProfileScreen() {
   return (
     <ScrollView style={styles.container}>
       <Text variant="headlineMedium" style={styles.title}>Profile</Text>
+
+      {/* Quick Actions */}
+      <Card style={styles.card}>
+        <Card.Content>
+          <Button
+            mode="contained"
+            icon="package-variant-closed"
+            onPress={() => router.push('/my-orders')}
+            style={{ marginBottom: 10, borderRadius: 8 }}
+          >
+            My Orders
+          </Button>
+          {isAdmin && (
+            <Button
+              mode="contained"
+              icon="clipboard-list"
+              onPress={() => router.push('/admin-orders')}
+              style={{ marginBottom: 10, borderRadius: 8, backgroundColor: '#8b5cf6' }}
+            >
+              Manage Orders (Admin)
+            </Button>
+          )}
+          {isAdmin && (
+            <Button
+              mode="contained"
+              icon="shield-crown"
+              onPress={() => router.push('/admin')}
+              style={{ borderRadius: 8, backgroundColor: '#f59e0b' }}
+            >
+              Product Management (Admin)
+            </Button>
+          )}
+        </Card.Content>
+      </Card>
       
       <Card style={styles.card}>
         <Card.Content>

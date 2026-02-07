@@ -8,6 +8,10 @@
     "ios": "expo run:ios",
     "web": "expo start --web"
   },
+
+  "bin": {
+    "run-sql-and-clean": "./scripts/run-sql-and-clean.js"
+  },
   "dependencies": {
     "@expo/vector-icons": "^13.0.0",
     "@google/generative-ai": "^0.24.1",
@@ -39,7 +43,9 @@
     "react-native-web": "^0.21.0",
     "scheduler": "0.26.0",
     "three": "^0.172.0",
-    "zustand": "^5.0.8"
+    "zustand": "^5.0.8",
+    "pg": "^8.11.0",
+    "dotenv": "^16.3.1"
   },
   "devDependencies": {
     "@types/react": "~19.1.0",
