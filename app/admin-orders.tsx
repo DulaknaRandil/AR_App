@@ -122,14 +122,16 @@ export default function AdminOrdersScreen() {
 
           <View style={{ alignItems: 'flex-end' }}>
             <Chip
+              mode="flat"
               style={[
                 styles.statusChip,
                 { backgroundColor: (STATUS_COLORS[item.status] || '#666') + '20' },
               ]}
               textStyle={{
                 color: STATUS_COLORS[item.status] || '#666',
-                fontSize: 11,
+                fontSize: 10,
                 fontWeight: '600',
+                lineHeight: 16,
               }}
             >
               {STATUS_LABELS[item.status] || item.status}
@@ -199,13 +201,23 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f5f5f5' },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   heading: { paddingHorizontal: 16, paddingTop: 16, fontWeight: 'bold' },
-  filterContainer: { paddingHorizontal: 16, paddingVertical: 12 },
-  segmentedButtons: { },
+  filterContainer: { 
+    paddingHorizontal: 16, 
+    paddingVertical: 10,
+    marginBottom: 2,
+  },
+  segmentedButtons: { 
+    height: 48,
+  },
   listContent: { paddingBottom: 24 },
   orderCard: { marginHorizontal: 16, marginBottom: 10, elevation: 2 },
   orderHeader: { flexDirection: 'row', justifyContent: 'space-between' },
   orderId: { fontWeight: '700', color: '#555' },
-  statusChip: { height: 26, marginBottom: 6 },
+  statusChip: { 
+    marginBottom: 8,
+    
+    paddingHorizontal: 12,
+  },
   totalText: { fontWeight: 'bold', color: '#059669', marginTop: 4 },
   orderFooter: { marginTop: 8, borderTopWidth: 1, borderTopColor: '#f0f0f0', paddingTop: 8 },
   emptyText: { textAlign: 'center', marginTop: 40, color: '#888' },

@@ -83,7 +83,7 @@ export default function MyOrdersScreen() {
               styles.statusChip,
               { backgroundColor: (STATUS_COLORS[item.status] || '#666') + '20' },
             ]}
-            textStyle={{ color: STATUS_COLORS[item.status] || '#666', fontSize: 12 }}
+            textStyle={{ color: STATUS_COLORS[item.status] || '#666', fontSize: 10, fontWeight: '600', lineHeight: 16 }}
           >
             {STATUS_LABELS[item.status] || item.status}
           </Chip>
@@ -164,7 +164,7 @@ const styles = StyleSheet.create({
   },
   orderId: { fontWeight: '700', color: '#333' },
   dateText: { color: '#888', marginTop: 2 },
-  statusChip: { height: 28 },
+  statusChip: { height: 30, paddingHorizontal: 12 },
   orderInfo: {
     flexDirection: 'row',
     justifyContent: 'space-between',
